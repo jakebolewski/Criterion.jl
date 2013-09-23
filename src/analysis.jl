@@ -135,6 +135,10 @@ function analyze_mean(sample::Vector{Float64},
     return u
 end
 
+function normal_cdf(x::Float64) 
+    0.5 * (1.0 + erf(x / sqrt(2.0)))
+end
+
 
 function normal_quantile(x)
     

@@ -3,7 +3,7 @@ abstract Benchmarkable
 immutable Benchmark <: Benchmarkable
     name :: String
     ntimes :: Integer
-    action :: Function
+    run :: Function
 end
 Base.print(b::Benchmark) = string("Benchmark ", b.name)
 
@@ -26,6 +26,7 @@ function bgroup(name::String,
 		benchmarks::Vector{Benchmarkable})
     BenchMarkGroup(name, benchmarks)
 end
+
 
 typealias Sample Vector{Float64}
 

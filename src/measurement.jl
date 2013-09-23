@@ -34,6 +34,47 @@ function run_for_atleast(howlong::Int64,
      end
 end
 
+function timed_func(func::Function, n::Integer)
+    start = time_ns()
+    local ret
+    for _ in 1:n
+	ret = func()
+    end
+    (int(time_ns() - start), 1.0)
+end
+
+function collect_samples(sample_count::Integer,
+			 exec_count::Integer, 
+			 func::Function,
+			 gc_before::Bool)
+    @assert sample_count > 0
+    results = zeros(sample_count)
+    times = zeros(sample_count)
+    for i in 1:sample_count
+        if gc_before
+	    Base.gc()
+	end
+        t, r = timed_func(func, exec_count)
+        times[i] = t;
+        results[i] = r 
+    end
+    (times, results)
+end
+
+
+function estimate_execution_count(period, func, gc_before_sample, est_run_time)
+    @printf("Estimating execution count...")
+    n = int(max(period / est_run_time / 5, 1))
+    while true
+        times = collect_samples(1, n, func, gc_before_sample)[1]
+        t = max(1.0, mean(times)) # prevent zero times 
+   	@printf("....")
+        if t >= period return n end
+        n = min(2 * n, n * (period / t) + 1)
+    end 
+    @printf("%d\n", n)
+    return n
+end
 
 function secs(k::Float64)
 

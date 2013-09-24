@@ -3,25 +3,48 @@ immutable Environment
     clock_cost::Float64
 end
 
+Base.print(env::Environment) = let res  = env.clock_resolution
+                                   cost = env.clock_cost
+	print("Environment(\n  clock_resolution:$res ns\n  clock_cost:$cost ns\n)")
+end 
+
+const SEED = 1000 :: Int64
+
 function resolution(k::Integer)
-    times = [time() for _ in 1:k]
+    times = zeros(Float64, k)
+    for i in 1:k 
+        times[i] = time_sec()
+    end
     return nonzeros(times[2:end] - times[1:end-1])
 end
 
-
 function cost(timelimit::Float64)
-    timeclock = (k) -> timed_noresult(() -> for _ 1:k time() end)
-    timeclock(1)
-    (_, iters, elapsed) = run_for_atleast(0.01, 10000 timeclock)
+    
+    function time_clock(niter::Integer)
+        start = time_sec()
+        for _ in 1:niter
+            time_sec()
+        end
+        time_sec() - start
+    end 
+
+    time_clock(1)
+    (_, iters, elapsed) = run_for_atleast(0.1, SEED, time_clock)
     ntimes = ceil(timelimit / elapsed)
-    times = [timeclock(iters) for _ in 1:ntimes]
-    return times ./ iters 
+    [time_clock(iters) / iters  for _ in 1:ntimes]
 end
 
+function analyze_mean(sample, niter)
+    u = mean(sample)
+    @printf("mean is %s (%d iterations)\n", time_str(u), length(sample))
+    return u
+end 
 
 function measure_environment()
-    @printf("Warming up...")
-    (_, seed, _) = run_for_atleast(0.1, 10000, resolution)
+    Base.gc()
+    @printf("Warming up...\n")
+    (_, seed, _) = run_for_atleast(0.1, SEED, resolution)
+    Base.gc()
     @printf("Estimating clock resolution...")
     (_, _, tdiffs) = run_for_atleast(0.5, seed, resolution)
     clock_res = analyze_mean(tdiffs)

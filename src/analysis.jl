@@ -11,12 +11,12 @@ immutable Outliers
     end
 end
 
-
 abstract OutlierEffect
 immutable Unaffected <: OutlierEffect end
 immutable Slight <: OutlierEffect end
 immutable Moderate <: OutlierEffect end
 immutable Severe <: OutlierEffect end
+
 
 function outlier_effect(var_outlier::Float64)
     if     var_outlier < 0.01 return Unaffected()
@@ -26,11 +26,13 @@ function outlier_effect(var_outlier::Float64)
     end 
 end 
 
+
 immutable OutlierVariance
     effect :: OutlierEffect 
     desc   :: String
     frac   :: Float64
 end
+
 
 function outlier_significance(mean_est::Float64,
 			      var_est::Float64, 
@@ -139,7 +141,6 @@ function normal_cdf(x::Float64)
     0.5 * (1.0 + erf(x / sqrt(2.0)))
 end
 
-
 function normal_quantile(x)
     
     let a = [2509.0809287301226727, 
@@ -228,8 +229,7 @@ function jacknife(data, stat)
     map((n) -> stat(drop_at(data, n)), [1:length(data)])
 end 
 
-#TODO: normal cdf
-function bca-nonparametric-eval (n size data z_alpha estimate sample jack_samples)
+function bca_nonparametric_eval(n, size, data, z_alpha, estimate, sample, jack_samples)
     z0 = normal_quantile(sum(estimate .> samples) / size)
     jack_mean = mean(jack_samples)
     jack_dev = jack_samples - jack_mean
@@ -241,3 +241,43 @@ function bca-nonparametric-eval (n size data z_alpha estimate sample jack_sample
     (confpoints, z0, acc, jack_mean, jack_samples)
 end
 
+function bca_nonparametric(data, statistic, size, alpha)
+    n = length(data)
+    data = sort(data)
+    estimate = statistic(data)
+    samples = bootstrap_sample(data, statistic, size)
+    jack_samps = jacknife(data, statistic)
+    alpha = isa(alpha, Vector) ? alpha : [alpha]
+    z_alpha = [normal_quantile(a) for a in alpha]
+    if isa(a, Vector)
+      map((est, samp, jksamp) ->
+	      bca_nonparametric_eval(n, size, data, z_alpha, est, samp, jksamp),
+	   estimate, samples, jack_samples)
+    else
+        bca_nonparametric_eval(n, size, data, z_alpha,
+			       estimate, samples, jack_samples)
+    end 
+end 
+
+
+function bca_to_estimate(alpha, bca_estimate)
+    (bca_estimate[1][1], bca_estimate[2][1])
+end
+
+
+function model_estimation_const(h_k, samp_var)
+    sqrt(1.0 + h_k^2 / samp_var)
+end 
+
+function smoothed_sample(c_k, h_k, data, deviates]
+    [c_k * (d + h_k * dev) for d in data, dev in deviates]
+end 
+
+function gaussian_weight(t)
+    k = (2.0 * pi) ^ 0.5
+    k * exp(t^2  / -2.0)
+end 
+
+defn kernel_density_est(h K n X x)
+    reduce((a,b) -> (a + K((x - b) / h)), 0, X) / (n * h)
+end 

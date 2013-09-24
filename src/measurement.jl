@@ -34,6 +34,7 @@ function run_for_atleast(howlong::Int64,
      end
 end
 
+
 function timed_func(func::Function, n::Integer)
     start = time_ns()
     local ret
@@ -42,6 +43,7 @@ function timed_func(func::Function, n::Integer)
     end
     (int(time_ns() - start), 1.0)
 end
+
 
 function collect_samples(sample_count::Integer,
 			 exec_count::Integer, 

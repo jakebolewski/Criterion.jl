@@ -94,20 +94,6 @@ function estimate_execution_count(period, func,
     return n
 end
 
-function fmt(time::Float64, unit::String)
-    local str::String
-    if time >= 1e9     str = @sprintf("%.4f %s", time, unit)
-    elseif time >= 1e6 str = @sprintf("%.0f %s", time, unit)
-    elseif time >= 1e5 str = @sprintf("%.1f %s", time, unit)
-    elseif time >= 1e4 str = @sprintf("%.2f %s", time, unit)
-    elseif time >= 1e3 str = @sprintf("%.3f %s", time, unit)
-    elseif time >= 1e2 str = @sprintf("%.4f %s", time, unit)
-    elseif time >= 1e1 str = @sprintf("%.5f %s", time, unit)
-    else str =  @sprintf("%.6f %s", time, unit)
-    end
-    return str
-end
-
 function time_str(k::Float64)
 
     function fmt(time::Float64, unit::String)

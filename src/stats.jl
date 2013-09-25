@@ -195,6 +195,10 @@ function bootstrap_bca{T<:Real}(data::Vector{T},
     return (ci_L, ci_U)
 end 
 
+function scale_bootstrap_estimate(est::(Float64,Float64), scale::Float64)
+    (est[1] * scale, est[2] * scale)
+end 
+
 function model_estimation_const(h_k::Float64,
 				samp_var::Float64)
     @assert samp_var != 0.0

@@ -35,12 +35,6 @@ function analyze_mean(sample)
     analyze_mean(sample, length(sample))
 end 
 
-function analyze_mean(sample, niter)
-    u = mean(sample)
-    @printf("mean is %s (%d iterations)\n", time_str(u), niter)
-    return u
-end 
-
 function measure_environment()
     Base.gc()
     @printf("Warming up...\n")

@@ -63,9 +63,9 @@ end
 
 
 immutable SampleAnalysis
-    mean :: Float64
-    std  :: Float64
-    outlier_variance :: Float64
+    mean::Float64
+    std::Float64
+    outlier_variance::Float64
 end
 
 function classify_outliers(samples::Vector{Float64})
@@ -129,6 +129,13 @@ function note_outliers(o::Outliers)
         check(o.high_mild, 1, "high mild")
         check(o.high_severe, 0, "high severe")
     end
+end
+
+function analyze_mean(sample::Vector{Float64}, niter::Integer)
+    u = mean(sample)
+    @printf("mean is %s (%d iterations)\n", time_str(u), niters)
+    note_outliers(classify_outliers(sample))
+    return u
 end
 
 

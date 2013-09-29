@@ -138,4 +138,9 @@ function analyze_mean(sample::Vector{Float64}, niter::Integer)
     return u
 end
 
+function scale(sa::SampleAnalysis, factor::FloatingPoint)
+    return SampleAnalysis(sa.mean * factor,
+                          sa.std  * factor,
+                          sa.outlier_variance)
+end
 

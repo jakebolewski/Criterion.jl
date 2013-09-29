@@ -4,10 +4,16 @@ immutable Outliers
     low_mild    :: Int64
     high_mild   :: Int64
     high_severe :: Int64
-        
+    
+    function Outliers(nsamples::Int64,
+		      low_severe::Int64, low_mild::Int64,
+		      high_mild::Int64, high_severe::Int64)
+        new(nsamples, low_severe, low_mild,
+	    high_mild, high_severe)
+    end 
+
     function Outliers(n::Int64) 
         @assert n > 0
-        new(n, 0, 0, 0, 0)
     end
 end
 
@@ -34,24 +40,22 @@ function outlier_significance(mean_est::Float64,
 			      var_est::Float64, 
 			      niter::Integer)
     @printf("Checking outlier significance\n")
-    mean_block = mean_est
-    var_block  = var_est
-    std_block  = sqrt(var_block)
-    mean_act = mean_block / niter
+    std_est  = sqrt(var_est)
+    mean_act = mean_est / niter
     mean_g_min = mean_act / 2.0
-    sigma_g = min((mean_g_min / 4.0), (std_block / sqrt(niter)))
+    sigma_g = min((mean_g_min / 4.0), (std_est / sqrt(niter)))
     var_g = sigma_g ^ 2
     c_max = (t_min) -> let j0 = mean_act - t_min
-                           k0 = -1.0 * n^2 * j0^2
-                           k1 = var_block + -1.0 * n * var_g + (n * j0^2)
+                           k0 = -1.0 * niter^2 * j0^2
+                           k1 = var_est + -1.0 * niter * var_g + (niter * j0^2)
                            det = k1^2 - (4 * var_g * k0)
                        floor( -2.0 * k0 / (k1 + sqrt(det)))
                        end
-    var_out = (c) -> let nmc = n - c
-                     (nmc / n) * (var_block - (nmc * var_g))
+    var_out = (c) -> let nmc = niter - c
+                     (nmc / niter) * (var_est - (nmc * var_g))
                      end 
-    min_f = (f q r) -> min(f(q), f(r))
-    var_out_min = min_f(var_out, 1, min-f(c_max, 0, mean_g_min)) / var_block
+    min_f = (f, q, r) -> min(f(q), f(r))
+    var_out_min = min_f(var_out, 1, min_f(c_max, 0, mean_g_min)) / var_est
     
     return OutlierVariance(outlier_effect(var_out_min),
 			   var_out_min)
@@ -100,7 +104,7 @@ end
 
 function count_outliers(o::Outliers)
     return o.low_severe + o.low_mild + 
-	   o.low_mild + o.high_severe
+	   o.high_mild + o.high_severe
 end
 
 
@@ -113,13 +117,13 @@ function note_outliers(o::Outliers)
     frac  = (n) -> 100.0 * (n / o.nsamples)
     check = (k,t,d) -> let fk = frac(k)
 			if fk > t
-                           @printf(" %d (%.1g%%) %s\n", k, fk, d)
+                           @printf(" %d (%.1f%%) %s\n", k, fk, d)
                         end
                        end
     noutliers = count_outliers(o)
     if noutliers > 0
-        @printf("found %d outliers among %d samples (%.1g%%)\n",
-		noutliers, nsamples(o), frac(noutliers))
+        @printf("found %d outliers among %d samples (%.1f%%)\n",
+		noutliers, o.nsamples, frac(noutliers))
         check(o.low_severe, 0, "low severe")
         check(o.low_mild, 1, "low mild")
         check(o.high_mild, 1, "high mild")
@@ -128,13 +132,13 @@ function note_outliers(o::Outliers)
 end
 
 
-function analyze_mean(sample::Vector{Float64}, 
-		      iters::Int64)
-    u = mean(sample)
-    @printf("mean is %s (%d iterations)\n", secs(u), iters)
-    note_outliers(classify_outliers(sample))
-    return u
-end
+#function analyze_mean(sample::Vector{Float64}, 
+#		      iters::Int64)
+#    u = mean(sample)
+#    @printf("mean is %s (%d iterations)\n", secs(u), iters)
+#    note_outliers(classify_outliers(sample))
+#    return u
+#end
 
 function bootstrap_bca(data, stat, size, alpha)
     @printf("Bootstrapping...\n")
@@ -158,10 +162,10 @@ function analyse_sample(conf_interval::Float64,
     outliers = outliers(sample)
     tail_quantile = 0.25
     alpha = [0.5, tail_quantile, 1.0 - tail_quantile]
-    stats = {}
-    for stat in {mean, variance, lquantile, uquantile}
-        push!(stats, bootstrap_bca(sample, stat, size, alpha)) 
-    end 
+    
+    stats = {bootstrap_bca(sample, stat, size, alpha)
+             for stat in (mean, variance, lquantile, uquantile)}
+
     analysis = outlier_significance(stats[1], stats[2], length(sample))
     m = mean(sample)
     s = std(sample)

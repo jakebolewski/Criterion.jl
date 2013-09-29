@@ -1,3 +1,17 @@
+immutable Estimate
+    point  :: Float64
+    lbound :: Float64
+    ubound :: Float64
+    confidence_level :: Float64
+
+    function Estimate {T<:Real} (pt::T, lb::T, ub::T, cl::T)
+        @assert lb <= ub
+        @assert cl > 0 && cl < 1
+        new(float64(pt), float64(lb), 
+	    float64(ub), float64(cl))
+    end
+end
+
 function uniform_dist(max_val::Real)
     rand() * max_val
 end
@@ -147,7 +161,7 @@ function jacknife{T<:Real}(data::Vector{T},
     return samples
 end 
 
-function bootstrap_percentile{T<:Real}(data::Vector{T}
+function bootstrap_percentile{T<:Real}(data::Vector{T},
 				       statistic::Function,
 				       alpha::Float64,
 				       nsamples::Integer)
@@ -171,8 +185,8 @@ function bootstrap_bca{T<:Real}(data::Vector{T},
     n = length(data)
     boot_samples = bootstrap_sample(data, statistic, nsamples)
      
-    estimate = statistic(data)
-    z0 = normal_quantile(sum(boot_samples .< estimate) / nsamples)
+    est = statistic(data)
+    z0 = normal_quantile(sum(boot_samples .< est) / nsamples)
 
     jack_samples = jacknife(data, statistic)
     jack_mean = mean(jack_samples)
@@ -187,15 +201,25 @@ function bootstrap_bca{T<:Real}(data::Vector{T},
     aU = normal_cdf(z0 + zU / (1.0 - a * zU))
    
     sort!(boot_samples)
-    idxL = int(nsamples * aL)
-    idxU = int(nsamples * aU)
+    idxL = int(round(nsamples * aL))
+    idxU = int(round(nsamples * aU))
     
     ci_L = boot_samples[idxL]
     ci_U = boot_samples[idxU]
-    return (ci_L, ci_U)
+    return Estimate(est, ci_L, ci_U, alpha)
+    #return (ci_L, ci_U)
 end 
 
-function scale_bootstrap_estimate(est::(Float64,Float64), scale::Float64)
+
+function scale_estimate(est::Estimate, factor::Real)
+    return Estimate(factor * est.point,
+	            factor * est.lbound,
+		    factor * est.ubound,
+		    est.confidence_level)
+end 
+
+function scale_bootstrap_estimate(est::(Float64,Float64),
+				   scale::Float64)
     (est[1] * scale, est[2] * scale)
 end 
 
@@ -216,7 +240,7 @@ function gaussian_weight(t::Float64)
     k * exp(t^2  / -2.0)
 end 
 
-defn kernel_density_est(h::Float64, K::Function,
+function kernel_density_est(h::Float64, K::Function,
 		        n::Float64, X::Float64, x::Float64)
     reduce((a,b) -> (a + K((x - b) / h)), 0, X) / (n * h)
 end 

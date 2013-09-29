@@ -19,15 +19,6 @@ function resolution(k::Integer)
 end
 
 function cost(timelimit::Float64)
-    
-    function time_clock(niter::Integer)
-        start = time_sec()
-        for _ in 1:niter
-            time_sec()
-        end
-        time_sec() - start
-    end 
-
     time_clock(1)
     (_, iters, elapsed) = run_for_atleast(0.1, SEED, time_clock)
     ntimes = ceil(timelimit / elapsed)
@@ -36,7 +27,17 @@ end
 
 function analyze_mean(sample, niter)
     u = mean(sample)
-    @printf("mean is %s (%d iterations)\n", time_str(u), length(sample))
+    @printf("mean is %s (%d iterations)\n", time_str(u), niter)
+    return u
+end 
+
+function analyze_mean(sample)
+    analyze_mean(sample, length(sample))
+end 
+
+function analyze_mean(sample, niter)
+    u = mean(sample)
+    @printf("mean is %s (%d iterations)\n", time_str(u), niter)
     return u
 end 
 
@@ -45,11 +46,11 @@ function measure_environment()
     @printf("Warming up...\n")
     (_, seed, _) = run_for_atleast(0.1, SEED, resolution)
     Base.gc()
-    @printf("Estimating clock resolution...")
+    @printf("Estimating clock resolution... ")
     (_, _, tdiffs) = run_for_atleast(0.5, seed, resolution)
     clock_res = analyze_mean(tdiffs)
-    @printf("Estimating cost of clock call...")
-    time_limit = min(100000.0 * clock_res, 1.0)
-    clock_cost = analyze_mean(cost(time_limit))
+    @printf("Estimating cost of clock call... ")
+    time_limit = min(1.0e5 * clock_res, 1.0)
+    clock_cost = analyze_mean(cost(time_limit), SEED)
     return Environment(clock_res, clock_cost)
 end

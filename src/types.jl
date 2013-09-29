@@ -5,16 +5,17 @@ immutable Benchmark <: Benchmarkable
     ntimes :: Integer
     run :: Function
 end
-Base.print(b::Benchmark) = string("Benchmark ", b.name)
-
+Base.show(b::Benchmark) = let name = b.name
+			  print("Benchmark $name")
+			  end
 
 immutable BenchmarkGroup <: Benchmarkable
     name :: String
     benchmarks :: Vector{Benchmark}
 end
-Base.print(b::BenchmarkGroup) = string("Benchmark Group ", b.name)
-
-
+Base.show(b::BenchmarkGroup) = let name = b.name
+			       print("Benchmark Group $name")
+			       end
 function bench(name::String, 
 	       ntimes::Integer,
 	       action::Function)
@@ -27,7 +28,6 @@ function bgroup(name::String,
     BenchMarkGroup(name, benchmarks)
 end
 
-
 typealias Sample Vector{Float64}
 
 immutable Payload
@@ -35,7 +35,6 @@ immutable Payload
     analysis :: SampleAnalysis
     outliers :: Outliers
 end
-
 
 immutable Result
     info :: String 

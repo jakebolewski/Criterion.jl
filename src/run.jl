@@ -2,8 +2,9 @@ function used_memory()
     int(Sys.total_memory()) - int(Sys.free_memory())
 end 
 
+const MAX_GC_ATTEMPTS = 10 :: Int64
+
 function force_gc()
-    MAX_GC_ATTEMPTS = 10
     force_gc(MAX_GC_ATTEMPTS)
 end
 
@@ -24,49 +25,47 @@ function force_gc(max_attempts::Integer)
     @printf("Attempts %d\n", attempts)
 end 
 
-function final_gc() 
-    @printf("Final GC...")
-    time_body(force_gc())[1]
-end
-
 function benchmark(count, warmup, target_time, func, gc_before)
     force_gc()
     first_execution = @elapsed func()
-end     
+end  
 
-function run_benchmark(env::Environment, bench::Benchmark, force_gc::Bool)
-    
-    run_for_atleast(0.1, 10000, time)
-    min_time = min(env.clock_res * 1000, 0.1)
+function run_benchmark(env::Environment,
+                       bench::Benchmark, 
+                       force_gc::Bool)
+    # run for at least a 1/10 of a second 
+    run_for_atleast(0.1, 10000, time_clock)
+    min_time = env.clock_resolution * 10000
     test_time, test_iter, _ = run_for_atleast(min_time, 1, bench.run)
-    @printf("ran %d iterations in %s", test_iter, secs(test_time))
+    @printf("Ran %d iterations in %s\n", test_iter, time_str(test_time))
     
-    new_iters = ceil(min_time * test_iter / test_time)
+    new_iters = int(ceil(min_time * test_iter / test_time))
     #sample_count <- config
     sample_count = 1000
+    
+    gc_time = @elapsed Base.gc()
+
     est_time = (sample_count * new_iters * test_time / test_iter)
+    est_time = force_gc ? est_time + (new_iters * sample_count  * gc_time) : est_time
     if true || est_time > 5
-    	@printf("collecting %d samples, %d iterations each, in estimate %s"
-	    	samples_count, new_iters, sec(est_time))
+    	@printf("Collecting %d samples, %d iterations each, estimated time %s\n",
+	    	sample_count, new_iters, time_str(est_time))
+    end
+
+    function run_sample()
+        bench.run(1)
     end
     
-    # run the gc to make sure that garbage created by previous
-    # benchmarks doesnt affect this benchmark
-    Base.gc()
-   
-    function run_sample()
-        for i in 1:new_iters
-            bench.run()
-        end
-    end 
-
+    run_sample()
     times = zeros(sample_count)
     for sample in 1:sample_count
-        t = timed_noresult(run_sample)
-        times[i] = (t - env.clock_cost) / new_iters
-	if force_gc
-            Base.gc() 
+        @printf("Progress %.2f\n", (sample / sample_count))
+        t = timed_noresult(run_sample, int(new_iters))
+        times[sample] = (t - env.clock_cost) / new_iters
+        if force_gc
+            Base.gc()
         end
     end
     return times
 end
+

@@ -9,6 +9,14 @@ function timed_result(action::Function, seed::Int64)
     return (delta, result)
 end
 
+function time_clock(niter::Integer)
+    start = time_sec()
+    for _ in 1:niter
+        time_sec()
+    end
+    time_sec() - start
+end 
+
 function timed_noresult(action::Function, seed::Int64)
     start = time_sec()
     for _ in 1:seed
@@ -66,14 +74,6 @@ function collect_samples(sample_count::Integer,
     end
     (times, results)
 end
-
-function s_to_ns(x)
-    x * 1e9
-end 
-
-function ns_to_s(x)
-    x * 1e-9
-end 
 
 function estimate_execution_count(period, func, 
 			          gc_before_sample,

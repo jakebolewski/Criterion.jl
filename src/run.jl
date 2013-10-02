@@ -35,7 +35,7 @@ function run_benchmark(env::Environment,
                        force_gc::Bool)
     # run for at least a 1/10 of a second 
     run_for_atleast(0.1, 10000, time_clock)
-    min_time = env.clock_resolution * 10000
+    min_time = min(env.clock_resolution * 10000, 0.1)
     test_time, test_iter, _ = run_for_atleast(min_time, 1, bench.run)
     @printf("Ran %d iterations in %s\n", test_iter, time_str(test_time))
     
@@ -48,19 +48,19 @@ function run_benchmark(env::Environment,
     est_time = (sample_count * new_iters * test_time / test_iter)
     est_time = force_gc ? est_time + (new_iters * sample_count  * gc_time) : est_time
     if true || est_time > 5
-    	@printf("Collecting %d samples, %d iterations each, estimated time %s\n",
+    	@printf("collecting %d samples, %d iterations each, estimated time %s\n",
 	    	sample_count, new_iters, time_str(est_time))
     end
 
-    function run_sample()
+    function run_once()
         bench.run(1)
     end
     
-    run_sample()
+    run_once()
     times = zeros(sample_count)
     for sample in 1:sample_count
-        @printf("Progress %.2f\n", (sample / sample_count))
-        t = timed_noresult(run_sample, int(new_iters))
+        #@printf("Progress %.2f\n", (sample / sample_count))
+        t = timed_noresult(run_once, int(new_iters))
         times[sample] = (t - env.clock_cost) / new_iters
         if force_gc
             Base.gc()
@@ -69,3 +69,35 @@ function run_benchmark(env::Environment,
     return times
 end
 
+function report_benchmark(desc::String, est::Estimate)
+    @printf("%s: %s, LB %s, UB %s, CI %.3f\n",
+            desc, time_str(est.point), time_str(est.lbound),
+            time_str(est.ubound), est.confidence_level)
+end 
+
+function report_outlier_variance(outvar::OutlierVariance)
+    effect_str = (e::OutlierEffect) ->
+	if     typeof(e) == Severe     "severely inflated"
+	elseif typeof(e) == Moderate   "moderately inflated"
+        elseif typeof(e) == Slight     "slightly inflated"
+        elseif typeof(e) == Unaffected "unaffected"
+        end
+    @printf("variance introduced by outliers: %.3f%%\n", outvar.frac * 100)
+    @printf("variance is %s by outliers\n", effect_str(outvar.effect))
+end
+     
+function run_analyze_one(env::Environment, desc::String, bench::Benchmark)
+    times = run_benchmark(env, bench, false) 
+    # ci <- get config item
+    # num_resamples <- get config item
+    tail_quantile = 0.025
+    n_resamples = 1000
+    @printf("analyzing with %d resamples...\n", n_resamples)
+    analysis = analyze_sample(times, tail_quantile, n_resamples)
+    report_benchmark("Mean ", analysis.mean)
+    report_benchmark("Stdev", analysis.std)
+    outliers = classify_outliers(times)
+    note_outliers(outliers)
+    report_outlier_variance(analysis.outlier_variance)
+    (times, analysis, outliers)
+end 

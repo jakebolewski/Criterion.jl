@@ -36,20 +36,20 @@ immutable OutlierVariance
     frac   :: Float64
 end
 
-function outlier_significance(mean_est::Float64,
-			      var_est::Float64, 
-			      niter::Integer)
+function outlier_variance(mean_est::Float64,
+			  var_est::Float64, 
+			  niter::Integer)
     @printf("Checking outlier significance\n")
-    std_est  = sqrt(var_est)
+    std_est  = var_est
     mean_act = mean_est / niter
     mean_g_min = mean_act / 2.0
     sigma_g = min((mean_g_min / 4.0), (std_est / sqrt(niter)))
     var_g = sigma_g ^ 2
     c_max = (t_min) -> let j0 = mean_act - t_min
                            k0 = -1.0 * niter^2 * j0^2
-                           k1 = var_est + -1.0 * niter * var_g + (niter * j0^2)
+                           k1 = var_est + (niter * var_g) + (niter * j0^2)
                            det = k1^2 - (4 * var_g * k0)
-                       floor( -2.0 * k0 / (k1 + sqrt(det)))
+                       floor((-2.0 * k0) / (k1 + sqrt(det)))
                        end
     var_out = (c) -> let nmc = niter - c
                      (nmc / niter) * (var_est - (nmc * var_g))
@@ -57,20 +57,19 @@ function outlier_significance(mean_est::Float64,
     min_f = (f, q, r) -> min(f(q), f(r))
     var_out_min = min_f(var_out, 1, min_f(c_max, 0, mean_g_min)) / var_est
     
-    return OutlierVariance(outlier_effect(var_out_min),
-			   var_out_min)
+    OutlierVariance(outlier_effect(var_out_min), var_out_min)
 end
 
 
 immutable SampleAnalysis
-    mean::Float64
-    std::Float64
-    outlier_variance::Float64
+    mean::Estimate
+    std::Estimate
+    outlier_variance::OutlierVariance
 end
 
 function classify_outliers(samples::Vector{Float64})
     
-    q1, q3 = quantile(samples, [0.25, 0.75])
+    q1, q2, q3 = quantile(samples, [0.25, 0.5,  0.75])
     iqr = q3 - q1
     loS = q1 - (iqr * 3.0)
     loM = q1 - (iqr * 1.5)
@@ -133,7 +132,7 @@ end
 
 function analyze_mean(sample::Vector{Float64}, niter::Integer)
     u = mean(sample)
-    @printf("mean is %s (%d iterations)\n", time_str(u), niters)
+    @printf("mean is %s (%d iterations)\n", time_str(u), niter)
     note_outliers(classify_outliers(sample))
     return u
 end
@@ -144,3 +143,10 @@ function scale(sa::SampleAnalysis, factor::FloatingPoint)
                           sa.outlier_variance)
 end
 
+function analyze_sample(samples::Vector{Float64}, tailq::Float64,
+                        nresamples::Integer)
+   est_mean = bootstrap_bca(samples, mean, tailq, nresamples) 
+   est_std  = bootstrap_bca(samples, std, tailq, nresamples)
+   out_var  = outlier_variance(est_mean.point, est_std.point, length(samples))
+   return SampleAnalysis(est_mean, est_std, out_var)
+end

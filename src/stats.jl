@@ -180,7 +180,7 @@ function bootstrap_bca{T<:Real}(data::Vector{T},
 			        statistic::Function,
 				alpha::Float64, 
 				nsamples::Integer)
-    @assert nsamples > 0 && alpha > 0.0 
+    @assert nsamples > 0 && alpha > 0.0  && alpha < 1.0
     
     n = length(data)
     boot_samples = bootstrap_sample(data, statistic, nsamples)
@@ -194,20 +194,30 @@ function bootstrap_bca{T<:Real}(data::Vector{T},
 
     a = sum((jack_dev .^ 3) / (6.0 * sum((jack_dev) .^ 2) ^ 1.5))
 
-    zL = z0 - normal_quantile(1.0 - alpha / 2.0)
-    zU = z0 + normal_quantile(1.0 - alpha / 2.0)
-
-    aL = normal_cdf(z0 + zL / (1.0 - a * zL))
-    aU = normal_cdf(z0 + zU / (1.0 - a * zU))
+    #zL = z0 - normal_quantile((1.0 - alpha) / 2.0)
+    #zU = z0 + normal_quantile((1.0 - alpha) / 2.0)
+ 
+    #aL = normal_cdf(z0 + zL / (1.0 - a * zL))
+    #aU = normal_cdf(z0 + zU / (1.0 - a * zU))
+    
+    a_cdf = (zalpha) -> normal_cdf(z0 + (z0 + zalpha) / (1.0 - a * (z0 + zalpha)))
+   
+    aL = normal_cdf(z0 + (z0 + alpha) / (1.0 - a * (z0 + alpha)))
+    aM = normal_cdf(z0 + (z0 + 0.5) / (1.0 - a * (z0 + 0.5)))
+    aU = normal_cdf(z0 + (z0 + (1.0 - alpha)) / (1.0 - a * (z0 + (1.0 - alpha))))
    
     sort!(boot_samples)
     idxL = int(round(nsamples * aL))
+    idxM = int(round(nsamples * aM))
     idxU = int(round(nsamples * aU))
     
-    ci_L = boot_samples[idxL]
-    ci_U = boot_samples[idxU]
-    return Estimate(est, ci_L, ci_U, alpha)
-    #return (ci_L, ci_U)
+    ciL = boot_samples[idxL]
+    med = boot_samples[idxM]
+    ciU = boot_samples[idxU]
+    
+    ci = 1.0 - (2.0 * alpha)
+    return Estimate(med, ciL, ciU, ci)
+    #return (ciL, ciU)
 end 
 
 

@@ -1,7 +1,7 @@
 Criterion.jl
 ============
 
-A port of the Criterion Haskell library to Julia.
+A port of the Haskell's Criterion and Clojure's Criterium library to Julia.
 
 Criterion runs benchmarks, analyzing the results using various statistical techniques
 

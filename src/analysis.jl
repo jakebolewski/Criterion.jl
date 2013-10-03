@@ -39,7 +39,7 @@ end
 function outlier_variance(mean_est::Float64,
 			  var_est::Float64, 
 			  niter::Integer)
-    @printf("Checking outlier significance\n")
+    @printf("outlier significance\n")
     std_est  = var_est
     mean_act = mean_est / niter
     mean_g_min = mean_act / 2.0
@@ -138,15 +138,17 @@ function analyze_mean(sample::Vector{Float64}, niter::Integer)
 end
 
 function scale(sa::SampleAnalysis, factor::FloatingPoint)
-    return SampleAnalysis(sa.mean * factor,
-                          sa.std  * factor,
-                          sa.outlier_variance)
+    SampleAnalysis(sa.mean * factor,
+                   sa.std  * factor,
+                   sa.outlier_variance)
 end
 
-function analyze_sample(samples::Vector{Float64}, tailq::Float64,
+function analyze_sample(samples::Vector{Float64},
+			tailq::Float64,
                         nresamples::Integer)
+
    est_mean = bootstrap_bca(samples, mean, tailq, nresamples) 
    est_std  = bootstrap_bca(samples, std, tailq, nresamples)
    out_var  = outlier_variance(est_mean.point, est_std.point, length(samples))
-   return SampleAnalysis(est_mean, est_std, out_var)
+   SampleAnalysis(est_mean, est_std, out_var)
 end

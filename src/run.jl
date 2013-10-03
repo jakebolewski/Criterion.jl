@@ -9,7 +9,7 @@ function force_gc()
 end
 
 function force_gc(max_attempts::Integer)
-    @printf("Forcing GC....")
+    @printf("forcing GC....")
     used = used_memory()
     attempts = 1
     while true
@@ -22,7 +22,7 @@ function force_gc(max_attempts::Integer)
 	    break
         end
     end
-    @printf("Attempts %d\n", attempts)
+    @printf("attempts %d\n", attempts)
 end 
 
 function benchmark(count, warmup, target_time, func, gc_before)
@@ -37,7 +37,7 @@ function run_benchmark(env::Environment,
     run_for_atleast(0.1, 10000, time_clock)
     min_time = min(env.clock_resolution * 10000, 0.1)
     test_time, test_iter, _ = run_for_atleast(min_time, 1, bench.run)
-    @printf("Ran %d iterations in %s\n", test_iter, time_str(test_time))
+    @printf("ran %d iterations in %s\n", test_iter, time_str(test_time))
     
     new_iters = int(ceil(min_time * test_iter / test_time))
     #sample_count <- config
@@ -56,21 +56,26 @@ function run_benchmark(env::Environment,
         bench.run(1)
     end
     
+    @printf("\rProgress 0.0%%")
     run_once()
     times = zeros(sample_count)
     for sample in 1:sample_count
-        #@printf("Progress %.2f\n", (sample / sample_count))
+        progress = int((sample / sample_count) * 100)
+        if progress % 10 == 0
+        	@printf("\rprogress %d%%", progress)
+        end 
         t = timed_noresult(run_once, int(new_iters))
         times[sample] = (t - env.clock_cost) / new_iters
         if force_gc
             Base.gc()
         end
     end
+    @printf("\rProgress 100%%\n")
     return times
 end
 
 function report_benchmark(desc::String, est::Estimate)
-    @printf("%s: %s, LB %s, UB %s, CI %.3f\n",
+    @printf("%s: %s, lb %s, ub %s, ci %.3f\n",
             desc, time_str(est.point), time_str(est.lbound),
             time_str(est.ubound), est.confidence_level)
 end 
@@ -94,10 +99,10 @@ function run_analyze_one(env::Environment, desc::String, bench::Benchmark)
     n_resamples = 1000
     @printf("analyzing with %d resamples...\n", n_resamples)
     analysis = analyze_sample(times, tail_quantile, n_resamples)
-    report_benchmark("Mean ", analysis.mean)
-    report_benchmark("Stdev", analysis.std)
+    report_benchmark("mean ", analysis.mean)
+    report_benchmark("stdev", analysis.std)
     outliers = classify_outliers(times)
     note_outliers(outliers)
     report_outlier_variance(analysis.outlier_variance)
     (times, analysis, outliers)
-end 
+end

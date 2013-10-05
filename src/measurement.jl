@@ -29,11 +29,13 @@ end
 function run_for_atleast(howlong::Float64,
 			 seed::Int64,
 			 action::Function)
+    #ensure that time_sec is compiled
+    time_sec()
     init_time = time_sec()
     iters = 0
     while true
         now = time_sec()
-        if ((now - init_time) > (howlong * 10))
+        if ((now - init_time) > 10.0 * howlong)
            throw(error("took too long to run: seed $seed, iters $iters"))
         end
 	elapsed, result = timed_result(action, seed)

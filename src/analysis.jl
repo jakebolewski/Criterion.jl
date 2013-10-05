@@ -56,8 +56,8 @@ function outlier_variance(mean_est::Float64,
                      end 
     min_f = (f, q, r) -> min(f(q), f(r))
     var_out_min = min_f(var_out, 1, min_f(c_max, 0, mean_g_min)) / var_est
-    
-    OutlierVariance(outlier_effect(var_out_min), var_out_min)
+    OutlierVariance(outlier_effect(var_out_min),
+		    var_out_min)
 end
 
 

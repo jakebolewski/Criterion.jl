@@ -30,16 +30,30 @@ function benchmark(count, warmup, target_time, func, gc_before)
     first_execution = @elapsed func()
 end  
 
+function compile_benchmakr(b::Benchmark)
+    b(1)
+end
+
+function compile_benchmark(f::Function)
+    f(1)
+end 
+
 function run_benchmark(env::Environment,
                        bench::Benchmark, 
                        force_gc::Bool)
     # run for at least a 1/10 of a second 
+    compile_benchmark(time_clock)
     run_for_atleast(0.1, 10000, time_clock)
     min_time = min(env.clock_resolution * 10000, 0.1)
+
+    compile_benchmark(bench.run)
     test_time, test_iter, _ = run_for_atleast(min_time, 1, bench.run)
     @printf("ran %d iterations in %s\n", test_iter, time_str(test_time))
     
+    println("$min_time, $test_iter, $test_time")
+
     new_iters = int(ceil(min_time * test_iter / test_time))
+
     #sample_count <- config
     sample_count = 1000
     
@@ -59,10 +73,16 @@ function run_benchmark(env::Environment,
     @printf("\rProgress 0.0%%")
     run_once()
     times = zeros(sample_count)
+    time_begin = time_sec()
     for sample in 1:sample_count
         progress = int((sample / sample_count) * 100)
         if progress % 10 == 0
-        	@printf("\rprogress %d%%", progress)
+ 		time_now = time_sec()
+    		diff = time_now - time_begin
+	  	percent_left = (100 - progress)
+		to_go = (diff * (100.0 / progress)) - diff
+        	@printf("\rprogress %d%%\t|\ttime remaining %.1f secs",
+			progress, to_go)
         end 
         t = timed_noresult(run_once, int(new_iters))
         times[sample] = (t - env.clock_cost) / new_iters

@@ -43,7 +43,7 @@ function run_benchmark(env::Environment,
     new_iters = int(ceil(min_time * test_iter / test_time))
 
     #sample_count <- config
-    sample_count = 2000
+    sample_count = 1000
     
     gc_time = @elapsed Base.gc()
 
@@ -97,16 +97,16 @@ function report_outlier_variance(outvar::OutlierVariance)
         elseif typeof(e) == Slight     "slightly inflated"
         elseif typeof(e) == Unaffected "unaffected"
         end
-    @printf("variance introduced by outliers: %.3f%%\n", outvar.frac * 100)
+    @printf("variance introduced by outliers: %.3f%%\n", outvar.frac)
     @printf("variance is %s by outliers\n", effect_str(outvar.effect))
 end
      
 function run_analyze_one(env::Environment, desc::String, bench::Benchmark)
-    times = run_benchmark(env, bench, false) 
+    times = run_benchmark(env, bench, true) 
     # ci <- get config item
     # num_resamples <- get config item
     tail_quantile = 0.025
-    n_resamples = 1000
+    n_resamples = 5000
     @printf("analyzing with %d resamples...\n", n_resamples)
     analysis = analyze_sample(times, tail_quantile, n_resamples)
     report_benchmark("mean ", analysis.mean)

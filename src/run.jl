@@ -30,36 +30,24 @@ function benchmark(count, warmup, target_time, func, gc_before)
     first_execution = @elapsed func()
 end  
 
-function compile_benchmakr(b::Benchmark)
-    b(1)
-end
-
-function compile_benchmark(f::Function)
-    f(1)
-end 
-
 function run_benchmark(env::Environment,
                        bench::Benchmark, 
                        force_gc::Bool)
     # run for at least a 1/10 of a second 
-    compile_benchmark(time_clock)
     run_for_atleast(0.1, 10000, time_clock)
-    min_time = min(env.clock_resolution * 10000, 0.1)
-
-    compile_benchmark(bench.run)
+    min_time = min(env.clock_resolution * 1000, 0.1)
+    
     test_time, test_iter, _ = run_for_atleast(min_time, 1, bench.run)
     @printf("ran %d iterations in %s\n", test_iter, time_str(test_time))
     
-    println("$min_time, $test_iter, $test_time")
-
     new_iters = int(ceil(min_time * test_iter / test_time))
 
     #sample_count <- config
-    sample_count = 1000
+    sample_count = 2000
     
     gc_time = @elapsed Base.gc()
 
-    est_time = (sample_count * new_iters * test_time / test_iter)
+    est_time = sample_count * new_iters * test_time * bench.ntimes / test_iter
     est_time = force_gc ? est_time + (new_iters * sample_count  * gc_time) : est_time
     if true || est_time > 5
     	@printf("collecting %d samples, %d iterations each, estimated time %s\n",
@@ -79,10 +67,11 @@ function run_benchmark(env::Environment,
         if progress % 10 == 0
  		time_now = time_sec()
     		diff = time_now - time_begin
-	  	percent_left = (100 - progress)
 		to_go = (diff * (100.0 / progress)) - diff
-        	@printf("\rprogress %d%%\t|\ttime remaining %.1f secs",
-			progress, to_go)
+		if to_go > 1
+                    @printf("\rprogress %d%%  |  time remaining %s",
+                            progress, time_str(to_go))
+                end 
         end 
         t = timed_noresult(run_once, int(new_iters))
         times[sample] = (t - env.clock_cost) / new_iters
@@ -90,7 +79,8 @@ function run_benchmark(env::Environment,
             Base.gc()
         end
     end
-    @printf("\rProgress 100%%\n")
+    @printf("\rprogress %d%%  |  time remaining %s\n",
+	    100, "0.00000 s")
     return times
 end
 

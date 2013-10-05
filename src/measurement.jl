@@ -110,6 +110,7 @@ function time_str(k::Float64)
     end
 
     if k < 0          return "-" + secs(-k)
+    elseif k >= 60    return fmt(k / 60.0, "min")
     elseif k >= 1     return fmt(k, "s")
     elseif k >= 1e-03 return fmt(k * 1e03, "ms")
     elseif k >= 1e-06 return fmt(k * 1e06, "us")

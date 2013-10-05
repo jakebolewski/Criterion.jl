@@ -36,30 +36,26 @@ immutable OutlierVariance
     frac   :: Float64
 end
 
-function outlier_variance(mean_est::Float64,
-			  var_est::Float64, 
-			  niter::Integer)
-    @printf("outlier significance\n")
-    std_est  = var_est
-    mean_act = mean_est / niter
-    mean_g_min = mean_act / 2.0
-    sigma_g = min((mean_g_min / 4.0), (std_est / sqrt(niter)))
-    var_g = sigma_g ^ 2
-    c_max = (t_min) -> let j0 = mean_act - t_min
-                           k0 = -1.0 * niter^2 * j0^2
-                           k1 = var_est + (niter * var_g) + (niter * j0^2)
-                           det = k1^2 - (4 * var_g * k0)
-                       floor((-2.0 * k0) / (k1 + sqrt(det)))
-                       end
-    var_out = (c) -> let nmc = niter - c
-                     (nmc / niter) * (var_est - (nmc * var_g))
-                     end 
-    min_f = (f, q, r) -> min(f(q), f(r))
-    var_out_min = min_f(var_out, 1, min_f(c_max, 0, mean_g_min)) / var_est
-    OutlierVariance(outlier_effect(var_out_min),
-		    var_out_min)
-end
-
+function outlier_variance(mean_est::Float64, std_est::Float64, niter::Integer)
+    mean_g  = 0.5 * (mean_est / niter)
+    std_g = min(mean_g / 4.0, std_est / sqrt(niter))
+    
+    function var_out(x)
+        ((niter - x) / niter) * std_est^2 - (niter - x) * std_g^2
+    end
+    
+    function cmax(x)
+        k   = (mean_est / niter) - x
+        d   = k^2
+        ad  = niter * d
+        k0  = -niter * ad
+        k1  = std_est^2 - (niter * std_g^2) + ad
+        det = k1^2 - (4 * std_g^2 * k0)
+        int(floor(-2 * k0 / (k1 * sqrt(det))))
+    end 
+    var_out_min = min(var_out(1), min(cmax(0), cmax(mean_g))) / std_est^2
+    OutlierVariance(outlier_effect(var_out_min), var_out_min)
+end  
 
 immutable SampleAnalysis
     mean::Estimate
@@ -149,6 +145,6 @@ function analyze_sample(samples::Vector{Float64},
 
    est_mean = bootstrap_bca(samples, mean, tailq, nresamples) 
    est_std  = bootstrap_bca(samples, std, tailq, nresamples)
-   out_var  = outlier_variance(est_mean.point, est_std.point, length(samples))
+   out_var  = outlier_variance(est_mean.point, est_std.point, length(samples)) 
    SampleAnalysis(est_mean, est_std, out_var)
 end

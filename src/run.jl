@@ -2,33 +2,12 @@ function used_memory()
     int(Sys.total_memory()) - int(Sys.free_memory())
 end 
 
-const MAX_GC_ATTEMPTS = 10 :: Int64
-
-function force_gc()
-    force_gc(MAX_GC_ATTEMPTS)
-end
-
-function force_gc(max_attempts::Integer)
-    @printf("forcing GC....")
-    used = used_memory()
-    attempts = 1
-    while true
-        Base.gc()
-	new_used = used_memory()
-        if used > new_used && attempts < max_attempts
-            used = new_used
-            attempts += 1
-	else
-	    break
-        end
-    end
-    @printf("attempts %d\n", attempts)
-end 
 
 function benchmark(count, warmup, target_time, func, gc_before)
     force_gc()
     first_execution = @elapsed func()
 end  
+
 
 function run_benchmark(env::Environment,
                        bench::Benchmark, 

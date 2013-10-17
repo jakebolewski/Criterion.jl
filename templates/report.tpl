@@ -28,7 +28,7 @@
 <div id="overview" class="ovchart" style="width:900px;height:100px;"></div>
 
 {{#report}}
-<h2><a name="b{{number}}">{{name}}</a></h2>
+<h2><a name="b{{number}}">{{{name}}}</a></h2>
  <table width="100%">
   <tbody>
    <tr>
@@ -153,15 +153,15 @@ $(function () {
   
 
   {{#report}}
-  mangulate({{number}}, "{{name}}",
+  mangulate({{number}}, "{{{name}}}",
             {{anMean_estPoint}},
             [{{#times}}{{x}},{{/times}}],
             [{{#kdetimes}}{{x}},{{/kdetimes}}],
             [{{#kdepdf}}{{x}},{{/kdepdf}}]);
   {{/report}}
 
-  var benches = [{{#report}}"{{name}}",{{/report}}];
-  var ylabels = [{{#report}}[-{{number}},'<a href="#b{{number}}">{{name}}</a>'],{{/report}}];
+  var benches = [{{#report}}"{{{name}}}",{{/report}}];
+  var ylabels = [{{#report}}[-{{number}},'<a href="#b{{number}}">{{{name}}}</a>'],{{/report}}];
   var means = $.scaleTimes([{{#report}}{{anMean_estPoint}},{{/report}}]);
   var xs = [];
   var prev = null;

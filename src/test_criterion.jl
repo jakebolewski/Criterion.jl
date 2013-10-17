@@ -1,4 +1,4 @@
-import Criterion
+using Criterion
 
 function test_svd(k::Integer)
     for _ in k
@@ -10,7 +10,7 @@ end
 bench = Criterion.Benchmark("test_svd", 1, test_svd)
 env = Criterion.measure_environment()
 #times = Criterion.run_benchmakr(env, bench, false)
-times, sa, out = Criterion.run_analyze_one(env, "test_svd", bench)
+times, sample_analysis, outliers = Criterion.run_analyze_one(env, "test_svd", bench)
 
 
 

@@ -1,6 +1,7 @@
 import Mustache
 import Distributions
 
+
 type Report
    num::Integer
    name::String
@@ -9,9 +10,11 @@ type Report
    outliers::Outliers
 end
 
+
 function render_iter(s::String, iter)
     [{s => x} for x in iter]
 end
+
 
 function report_to_dict(report::Report5)
    kde_times = Distributions.kde(report.times)
@@ -36,17 +39,28 @@ function read_css(template_dir::String)
     readall(abspath(joinpath(template_dir, "criterion.css")))
 end
 
-function report(reports::Vector{Report5})
-    report_dicts = Dict[]
-    for r in reports
-	push!(report_dicts, report_to_dict(r))
-    end
+
+function report(rfile::String, reports::Vector{Report5})
+    report_dicts = {report_to_dict(r) for r in reports}
     tmpl = Mustache.template_from_file("../templates/report.tpl")
     template_dir = abspath("../templates/")
-    fh = open("testreport.html","w")
+    fh = open(rfile,"w")
     Mustache.render(fh, tmpl, {"name" => "test",
                     "include" => [{"dir" => string("file://", template_dir), 
 				   "css" => read_css(template_dir)}],
 		    "report" => report_dicts})
     close(fh)
 end
+
+function report(rfile::String, r::Report)
+    report(rfile, [r])
+end
+
+function report(rs::Vector{Report})
+    report("criterion.html", rs)
+end
+
+function report(r::Report)
+    report("criterion.html", [r])
+end
+

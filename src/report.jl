@@ -31,17 +31,22 @@ function report_to_dict(report::Report5)
     "std_ubound" => report.analysis.std.ubound}
 end
 
+
+function read_css(template_dir::String)
+    readall(abspath(joinpath(template_dir, "criterion.css")))
+end
+
 function report(reports::Vector{Report5})
     report_dicts = Dict[]
     for r in reports
 	push!(report_dicts, report_to_dict(r))
     end
- 
     tmpl = Mustache.template_from_file("../templates/report.tpl")
+    template_dir = abspath("../templates/")
     fh = open("testreport.html","w")
     Mustache.render(fh, tmpl, {"name" => "test",
-                      "include" => [{"dir" => string("file://",abspath("../templates/")),
-				     "css" => readall(abspath("../templates/criterion.css"))}],
-		  "report" => report_dicts})
+                    "include" => [{"dir" => string("file://", template_dir), 
+				   "css" => read_css(template_dir)}],
+		    "report" => report_dicts})
     close(fh)
 end

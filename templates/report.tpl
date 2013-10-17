@@ -43,30 +43,30 @@
   <thead class="analysis">
    <th></th>
    <th class="cibound"
-       title="{{anMean_estConfidenceLevel}} confidence level">lower bound</th>
+       title="{{mean_confidence_level}} confidence level">lower bound</th>
    <th>estimate</th>
    <th class="cibound"
-       title="{{anMean_estConfidenceLevel}} confidence level">upper bound</th>
+       title="{{mean_confidence_level}} confidence level">upper bound</th>
   </thead>
   <tbody>
    <tr>
     <td>Mean execution time</td>
-    <td><span class="citime">{{anMean_estLowerBound}}</span></td>
-    <td><span class="time">{{anMean_estPoint}}</span></td>
-    <td><span class="citime">{{anMean_estUpperBound}}</span></td>
+    <td><span class="citime">{{mean_lbound}}</span></td>
+    <td><span class="time">{{mean_point}}</span></td>
+    <td><span class="citime">{{mean_ubound}}</span></td>
    </tr>
    <tr>
     <td>Standard deviation</td>
-    <td><span class="citime">{{stdlb}}</span></td>
-    <td><span class="time">{{stdpt}}</span></td>
-    <td><span class="citime">{{stdub}}</span></td>
+    <td><span class="citime">{{std_lbound}}</span></td>
+    <td><span class="time">{{std_point}}</span></td>
+    <td><span class="citime">{{std_ubound}}</span></td>
    </tr>
   </tbody>
  </table>
 
  <span class="outliers">
-   <p>Outlying measurements have {{anOutlierVar_ovDesc}}
-     (<span class="percent">{{anOutlierVar_ovFraction}}</span>%)
+   <p>Outlying measurements have {{outlier_effect}}
+     (<span class="percent">{{outlier_fraction}}</span>%)
      effect on estimated standard deviation.</p>
  </span>
 {{/report}}
@@ -154,7 +154,7 @@ $(function () {
 
   {{#report}}
   mangulate({{number}}, "{{{name}}}",
-            {{anMean_estPoint}},
+            {{mean_point}},
             [{{#times}}{{x}},{{/times}}],
             [{{#kdetimes}}{{x}},{{/kdetimes}}],
             [{{#kdepdf}}{{x}},{{/kdepdf}}]);
@@ -162,7 +162,7 @@ $(function () {
 
   var benches = [{{#report}}"{{{name}}}",{{/report}}];
   var ylabels = [{{#report}}[-{{number}},'<a href="#b{{number}}">{{{name}}}</a>'],{{/report}}];
-  var means = $.scaleTimes([{{#report}}{{anMean_estPoint}},{{/report}}]);
+  var means = $.scaleTimes([{{#report}}{{mean_point}},{{/report}}]);
   var xs = [];
   var prev = null;
   for (var i = 0; i < means[0].length; i++) {

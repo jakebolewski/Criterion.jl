@@ -20,15 +20,15 @@ function report_to_dict(report::Report5)
     "times" => render_iter("x", report.times),
     "kdetimes" => render_iter("x", kde_times.x),
     "kdepdf" => render_iter("x", kde_times.density),
-    "anMean_estPoint" => report.analysis.mean.point,
-    "anMean_estConfidenceLevel" => report.analysis.mean.confidence_level,
-    "anMean_estLowerBound" => report.analysis.mean.lbound,
-    "anMean_estUpperBound" => report.analysis.mean.ubound,
-    "anOutlierVar_ovDesc" => report.analysis.outlier_variance.effect,
-    "anOutlierVar_ovFraction" => report.analysis.outlier_variance.frac,
-    "stdlb" => report.analysis.std.lbound,
-    "stdpt" => report.analysis.std.point,
-    "stdub" => report.analysis.std.ubound}
+    "mean_point" => report.analysis.mean.point,
+    "mean_confidence_level" => report.analysis.mean.confidence_level,
+    "mean_lbound" => report.analysis.mean.lbound,
+    "mean_ubound" => report.analysis.mean.ubound,
+    "outlier_effect" => report.analysis.outlier_variance.effect,
+    "outlier_fraction" => report.analysis.outlier_variance.frac,
+    "std_lbound" => report.analysis.std.lbound,
+    "std_point" => report.analysis.std.point,
+    "std_ubound" => report.analysis.std.ubound}
 end
 
 function report(reports::Vector{Report5})

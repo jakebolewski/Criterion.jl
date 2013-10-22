@@ -12,6 +12,8 @@ env = Criterion.measure_environment()
 #times = Criterion.run_benchmakr(env, bench, false)
 times, sample_analysis, outliers = Criterion.run_analyze_one(env, "test_svd", bench)
 
+r = Report(1, "svd/svd1", times, sample_analysis, outliers) 
+report(r)
 
 
 #using Winston

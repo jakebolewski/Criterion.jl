@@ -52,15 +52,52 @@ function report(rfile::String, reports::Vector{Report5})
     close(fh)
 end
 
+
 function report(rfile::String, r::Report)
     report(rfile, [r])
 end
+
 
 function report(rs::Vector{Report})
     report("criterion.html", rs)
 end
 
+
 function report(r::Report)
     report("criterion.html", [r])
 end
 
+
+# JUnit Output
+function junit(reports::Vector{Report})
+    
+    attr_esc = (esc) -> begin
+        if     esc == '\'' "&apos;"
+        elseif esc == '"'  "&quot;"
+        elseif esc == '<'  "&lt;"
+        elseif esc == '>'  "&gt;"
+        elseif esc == '&'  "&amp;"
+        else string(esc)
+        end
+    end
+   
+    esc_html = (str) -> join([attr_esc(c) for c in str], "")
+    
+    report_out = String[]
+    ntests = length(reports)
+    header = string("<?xml versions\"1.0\" encoding=\"UTF-8\"?>\n",
+                    "<testsuite name=\"Criterion benchmarks\" tests=\"$ntests\">\n")
+    push!(report_out, header)  
+    for report in reports 
+       name = esc_html(report.name)
+       time = report.analysis.mean.point
+       push!(report_out, "<testcase name=\"$name\" time=\"$time\"/>\n")
+   end
+   push!(report_out, "</testsuite>\n")
+   join(report_out, "")
+end
+
+
+function junit(report::Report)
+    junit([report])
+end

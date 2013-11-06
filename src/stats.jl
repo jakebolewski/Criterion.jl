@@ -146,11 +146,6 @@ function normal_quantile(x::Float64)
     end 
 end
 
-function drop_at{T}(arr::Vector{T}, n::Integer)
-    @assert 1 <= n <= length(arr)
-    vcat(arr[1:n-1], arr[n+1:end])
-end
-
 function jacknife{T<:Real}(data::Vector{T},
 			   stat::Function)
     n = length(data)
@@ -216,7 +211,7 @@ function bootstrap_bca{T<:Float64}(data::Vector{T},
     if neps == length(jack_dev)
         return Estimate(jack_mean, jack_mean, jack_mean, ci)
     end
-
+    
     a = sum((jack_dev .^ 3) / (6.0 * sum((jack_dev) .^ 2) ^ 1.5))
     #zL = z0 - normal_quantile((1.0 - alpha) / 2.0)
     #zU = z0 + normal_quantile((1.0 - alpha) / 2.0)

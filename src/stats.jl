@@ -7,8 +7,8 @@ immutable Estimate
     function Estimate {T<:Real} (pt::T, lb::T, ub::T, cl::T)
         @assert lb <= ub
         @assert cl > 0 && cl < 1
-        new(float64(pt), float64(lb), 
-	    float64(ub), float64(cl))
+        return new(float64(pt), float64(lb), 
+	           float64(ub), float64(cl))
     end
 end
 
@@ -176,10 +176,10 @@ function bootstrap_percentile{T<:Real}(data::Vector{T},
     return (ci_L, ci_U)
 end 
 
-function bootstrap_bca{T<:Real}(data::Vector{T}, 
-			        statistic::Function,
-				alpha::Float64, 
-				nsamples::Integer)
+function bootstrap_bca{T<:Float64}(data::Vector{T}, 
+			           statistic::Function,
+				   alpha::Float64, 
+				   nsamples::Integer)
     @assert nsamples > 0 && alpha > 0.0  && alpha < 1.0
     
     n = length(data)
@@ -191,33 +191,37 @@ function bootstrap_bca{T<:Real}(data::Vector{T},
     jack_samples = jacknife(data, statistic)
     jack_mean = mean(jack_samples)
     jack_dev = jack_samples - jack_mean
+    
+    ci = 1.0 - (2.0 * alpha)
+  
+    # special case when all numbers are exactly the same or within fp tolerance
+    if all(x -> isapprox(x, 0.0), jack_dev)
+        return Estimate(jack_mean, jack_mean, jack_mean, ci)
+    end
 
     a = sum((jack_dev .^ 3) / (6.0 * sum((jack_dev) .^ 2) ^ 1.5))
-
     #zL = z0 - normal_quantile((1.0 - alpha) / 2.0)
     #zU = z0 + normal_quantile((1.0 - alpha) / 2.0)
  
     #aL = normal_cdf(z0 + zL / (1.0 - a * zL))
     #aU = normal_cdf(z0 + zU / (1.0 - a * zU))
     
-    a_cdf = (zalpha) -> normal_cdf(z0 + (z0 + zalpha) / (1.0 - a * (z0 + zalpha)))
-   
+    #a_cdf = (zalpha) -> normal_cdf(z0 + (z0 + zalpha) / (1.0 - a * (z0 + zalpha)))
+    
     aL = normal_cdf(z0 + (z0 + alpha) / (1.0 - a * (z0 + alpha)))
     aM = normal_cdf(z0 + (z0 + 0.5) / (1.0 - a * (z0 + 0.5)))
     aU = normal_cdf(z0 + (z0 + (1.0 - alpha)) / (1.0 - a * (z0 + (1.0 - alpha))))
-   
+    
     sort!(boot_samples)
     idxL = int(round(nsamples * aL))
     idxM = int(round(nsamples * aM))
     idxU = int(round(nsamples * aU))
-    
+
     ciL = boot_samples[idxL]
     med = boot_samples[idxM]
     ciU = boot_samples[idxU]
     
-    ci = 1.0 - (2.0 * alpha)
     return Estimate(med, ciL, ciU, ci)
-    #return (ciL, ciU)
 end 
 
 
@@ -228,8 +232,8 @@ function scale_estimate(est::Estimate, factor::Real)
 		    est.confidence_level)
 end 
 
-function scale_bootstrap_estimate(est::(Float64,Float64),
-				   scale::Float64)
+function scale_bootstrap_estimate(est::(Float64, Float64),
+				  scale::Float64)
     (est[1] * scale, est[2] * scale)
 end 
 

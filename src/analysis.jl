@@ -63,7 +63,7 @@ immutable SampleAnalysis
     outlier_variance::OutlierVariance
 end
 
-function classify_outliers(samples::Vector{Float64})
+function classify_outliers{T<:Real}(samples::Vector{T})
     
     q1, q2, q3 = quantile(samples, [0.25, 0.5,  0.75])
     iqr = q3 - q1

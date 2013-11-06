@@ -5,9 +5,32 @@ macro fact_max_err(expected, actual, max_err)
 end
 
 facts("bootstrap estimate") do
+    C = Criterion 
     testdata = rand(10_000)
-    est_mean  = Criterion.bootstrap_bca(testdata, mean, 0.05, 1000)
+    est_mean  = C.bootstrap_bca(testdata, mean, 0.05, 1000)
     @fact (est_mean.point  - 0.5) < 1e-2 => true
+    @fact_max_err 0.5 est_mean.lbound  0.02
+    @fact_max_err 0.5 est_mean.ubound  0.02
+    @fact C.scale_bootstrap_estimate((4.5, 5.5), 0.1) => (0.45, 0.55)
+end
+
+facts("bootstrap bca") do
+    C = Criterion
+    context("mean") do 
+        test_data = ones(20)
+        est_mean  = C.bootstrap_bca(test_data, mean, 0.05, 100)
+        @fact est_mean.point  => roughly(1.0)
+        @fact est_mean.lbound => roughly(1.0)
+        @fact est_mean.ubound => roughly(1.0)
+    end
+
+    context("variance") do
+        test_data = ones(20)
+        est_var   = C.bootstrap_bca(test_data, std, 0.05, 100)
+        @fact est_var.point  => roughly(0.0)
+        @fact est_var.lbound => roughly(0.0)
+        @fact est_var.ubound => roughly(0.0)
+    end
 end
 
 facts("normal quantile") do
@@ -35,6 +58,3 @@ facts("normal cdf test") do
     @fact_max_err 0.158655253931457 normal_cdf(-1.0) max_error
     @fact_max_err 0.00134989803163009 normal_cdf(-3.0) max_error
 end
-
-
-

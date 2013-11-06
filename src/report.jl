@@ -16,7 +16,7 @@ function render_iter(s::String, iter)
 end
 
 
-function report_to_dict(report::Report5)
+function report_to_dict(report::Report)
    kde_times = Distributions.kde(report.times)
    {"name" => report.name,
     "number" => report.num,
@@ -40,12 +40,12 @@ function read_css(template_dir::String)
 end
 
 
-function report(rfile::String, reports::Vector{Report5})
+function report(rfile::String, reports::Vector{Report})
     report_dicts = {report_to_dict(r) for r in reports}
     tmpl = Mustache.template_from_file("../templates/report.tpl")
     template_dir = abspath("../templates/")
     fh = open(rfile,"w")
-    Mustache.render(fh, tmpl, {"name" => "test",
+    Mustache.render(fh, tmpl, {"name" => "aaa",
                     "include" => [{"dir" => string("file://", template_dir), 
 				   "css" => read_css(template_dir)}],
 		    "report" => report_dicts})

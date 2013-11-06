@@ -191,19 +191,29 @@ function bootstrap_bca{T<:Float64}(data::Vector{T},
     @assert nsamples > 0 && alpha > 0.0  && alpha < 1.0
     
     n = length(data)
+    ci = 1.0 - (2.0 * alpha)
+    
     boot_samples = bootstrap_sample(data, statistic, nsamples)
-     
     est = statistic(data)
     z0 = normal_quantile(sum(boot_samples .< est) / nsamples)
 
     jack_samples = jacknife(data, statistic)
     jack_mean = mean(jack_samples)
+
     jack_dev = jack_samples - jack_mean
-    
-    ci = 1.0 - (2.0 * alpha)
-  
+    jack_dev = Array(Float64, n)
+   
+    neps = 0
+    for i in 1:length(jack_dev)
+        d = jack_samples[i] - jack_mean
+        if isapprox(d, 0.0)
+            neps += 1
+        end
+        jack_dev[i] = d
+    end
+   
     # special case when all numbers are exactly the same or within fp tolerance
-    if all(x -> isapprox(x, 0.0), jack_dev)
+    if neps == length(jack_dev)
         return Estimate(jack_mean, jack_mean, jack_mean, ci)
     end
 

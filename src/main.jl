@@ -51,4 +51,4 @@ end
 function main()
     parsed_args = parse_cmdline()
     cfg = config(parsed_args)
-nd 
+end 

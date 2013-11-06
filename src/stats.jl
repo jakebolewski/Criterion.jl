@@ -154,10 +154,18 @@ end
 function jacknife{T<:Real}(data::Vector{T},
 			   stat::Function)
     n = length(data)
-    samples = Array(T, n)
-    for idx in 1:n
-        samples[idx] = stat(drop_at(data, idx))
-    end 
+    samples = Array(Float64, n)
+    sample_data = Array(T, n-1)
+    for i in 1:n
+        idx = 0
+        for j in 1:n
+            if j != i
+                idx += 1
+                sample_data[idx] = data[i]
+            end
+        end
+        samples[i] = stat(sample_data)
+    end
     return samples
 end 
 

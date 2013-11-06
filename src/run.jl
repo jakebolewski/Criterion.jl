@@ -85,7 +85,7 @@ function run_analyze_one(env::Environment, desc::String, bench::Benchmark)
     # ci <- get config item
     # num_resamples <- get config item
     tail_quantile = 0.025
-    n_resamples = 5000
+    n_resamples = 1000
     @printf("analyzing with %d resamples...\n", n_resamples)
     analysis = analyze_sample(times, tail_quantile, n_resamples)
     report_benchmark("mean ", analysis.mean)

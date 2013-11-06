@@ -14,17 +14,17 @@ type Version <: PrintExit end
 
 
 function default_config()
-   {"ci" => 0.95,
-    "gc" => true,
-    "resamples"  => 100 * 1000,
-    "results" => nothing,
-    "report" => nothing,
-    "samples" => 100,
-    "summary" => nothing,
-    "template" => "report.tpl",
-    "quiet" => false,
-    "no-measurements" => false,
-    "junit" => nothing}
+   {:ci => 0.95,
+    :gc => true,
+    :resamples  => 1000,
+    :results => nothing,
+    :report => nothing,
+    :samples => 100,
+    :summary => nothing,
+    :template => "report.tpl",
+    :quiet => false,
+    :no_measurements => false,
+    :junit => false}
 end
 
 
